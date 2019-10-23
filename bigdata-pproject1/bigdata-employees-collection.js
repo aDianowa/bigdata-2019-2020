@@ -188,7 +188,7 @@ var addFemaleEmployees = function() {
 
         var address =  generateAddress() + ', ' + (Math.floor(Math.random() * 100)).toString();
         
-        dbеmpin.insert({
+        dbempin.insert({
             firstName: firstName,
             lastName: lastName,
             email: email,
