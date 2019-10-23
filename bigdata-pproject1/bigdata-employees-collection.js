@@ -14,8 +14,7 @@ db.employees.createIndex( { "email": 1 }, { unique: true } );
 
 var validatedEmployees = function(document){
     // Requires first name
-    if(!document.firstName) {
-
+    if(!(document.firstName)) {
         print('Property *firstName* is required');
         return false; 
     }
@@ -53,11 +52,14 @@ var validatedEmployees = function(document){
         return;
     }
 
-    // Departments validation
-    if(!(document.department in db.departments.distinct("name"))){
-        print('That is an invalid department');
-        return false;
-    }
+    // // Departments validation
+    // if(!(document.department in db.departments.distinct("name"))){
+    //     print(document.department)
+    //     print(db.departments.distinct("name"))
+    //     print(document.department in db.departments.distinct("name"))
+    //     //print('That is an invalid department');
+    //     return false;
+    // }
 
     // Phone validation
     if(!document.phone.startsWith('0') || document.phone.length != 10 ){
@@ -167,7 +169,7 @@ var generateJobTitle = function() {
 
 // Generate Department
 var generateDepartment = function() {
-    var 
+    var collection = db.departments.distinct('name');
     var index = Math.floor((Math.random() * (8 - 1) + 1));
     return collection[index]
 }
@@ -193,7 +195,7 @@ var addFemaleEmployees = function() {
             phone: generatePhone(),
             jobTitle: generateJobTitle(),
             department: generateDepartment(),
-            address: {
+            addressCollection: {
                 city: 'Plovdiv',
                 country: 'Bulgaria',
                 address: address
@@ -219,7 +221,7 @@ var addMaleEmployees = function() {
             phone: generatePhone(),
             jobTitle: generateJobTitle(),
             department: generateDepartment(),
-            address: {
+            addressCollection: {
                 city: 'Plovdiv',
                 country: 'Bulgaria',
                 address: address
