@@ -12,80 +12,92 @@
 // VALIDATION
 db.employees.createIndex( { "email": 1 }, { unique: true } );
 
-var dbe = {
-    insert : function(document) {
-
+var validatedEmployees = function(document){
     // Requires first name
     if(!document.firstName) {
 
-    print('Property *firstName* is required');
-    return; 
+        print('Property *firstName* is required');
+        return false; 
     }
-
+    
     // Requires last name
-    if(!document.firstName) {
+    if(!document.lastName) {
         print('Property *lastName* is required');
-        return; 
+        return false; 
     }
 
     // Requires phone
     if(!document.phone) {
         print('Property *phone* is required');
-        return; 
+        return false; 
     }
 
     // Requires email
     if(!document.email) {
         print('Property *email* is required');
-        return; 
+        return false; 
     }
 
     // Requires job title
     if(!document.jobTitle) {
         print('Property *jobTitle* is required');
-        return; 
+        return false; 
     }
 
-    // Requires address
-    // if(document.addressCollection.isEmpty()) {
-    //     print('Property *address* is required');
-    //     return;
-    // }
+    //Requires address
+    if(!document.addressCollection || 
+        !document.addressCollection.address ||
+        !document.addressCollection.country ||
+        !document.addressCollection.city) {
+        print('Property *address* is required');
+        return;
+    }
 
     // Departments validation
-    if(!document.departments in  db.departments.distinct("name")){
+    if(!(document.department in db.departments.distinct("name"))){
         print('That is an invalid department');
-        return;
+        return false;
     }
 
     // Phone validation
     if(!document.phone.startsWith('0') || document.phone.length != 10 ){
         print('Invalid phone number');
-        return;
+        return false;
     }
 
+    // Manager validation
+    if(!document.manager in db.employees.distinct("_id")){
+        print('Invalid manager id');
+        return false;
+    }
+
+    return true;
+}
+
+// FOR INSERT
+var dbempin = {
+    insert : function(document) {
+
+    if(!validatedEmployees(document)) return;
+
     // insert data 
-    db.employees.insert(document);
+    dbempin.insert(document);
     }
 };
 
-// Initial record    
-db.employees.insert({
-    firstName: 'Albena',
-    lastName: 'Andreeva',
-    otherName: 'Dianova',
-    phone: '0876453446',
-    email: 'abi1997@abv.bg',
-    addressCollection : {
-        city: 'Plovdiv',
-        country: 'Bulgaria',
-        address: 'Ravna reka Str, 12'
-    },
-    jobTitle: 'auditor',
-    department: 'test'
-})
+// FOR UPDATE
+var dbempup = {
+    update : function(document) {
 
-dbe.insert({
+    if(!validatedEmployees(document)) return;
+    
+    // update data 
+    db.employees.update(document);
+    }
+};
+
+// Validated initial record
+dbempin.insert({
     firstName: 'Albena',
     lastName: 'Andreeva',
     otherName: 'Dianova',
@@ -97,7 +109,7 @@ dbe.insert({
         address: 'Ravna reka Str, 12'
     },
     jobTitle: 'auditor',
-    department: 'test'
+    department: 'administration'
 })
 
 // GENERATING PROPERTIES
@@ -134,7 +146,7 @@ var generateEmailDomain = function() {
 
 // Generate Phone Number
 var generatePhone = function() {
-    return '08' + (Math.floor(Math.random() * 100000000)).toString();
+    return '08' + (Math.floor(10000000 + Math.random() * 9000000)).toString();
 }
 
 // Generate Address
@@ -174,7 +186,7 @@ var addFemaleEmployees = function() {
 
         var address =  generateAddress() + ', ' + (Math.floor(Math.random() * 100)).toString();
         
-        db.employees.insert({
+        dbеmpin.insert({
             firstName: firstName,
             lastName: lastName,
             email: email,
@@ -200,7 +212,7 @@ var addMaleEmployees = function() {
 
         var address =  generateAddress() + ', ' + (Math.floor(Math.random() * 100)).toString();
         
-        db.employees.insert({
+        dbempin.insert({
             firstName: firstName,
             lastName: lastName,
             email: email,
@@ -222,7 +234,7 @@ var addMaleEmployees = function() {
 db.employees.find({jobTitle : 'auditor'}).forEach(function(document) {
   
     // UPDATE employees SET manager = 'Albena Andreeva' WHERE jobTitle = 'auditor';
-    db.employees.update({ _id : document._id},{
+    dbempup.update({ _id : document._id},{
         firstName : document.firstName,
         lastName : document.lastName,
         email: document.email,
@@ -239,7 +251,7 @@ db.employees.find({jobTitle : 'auditor'}).forEach(function(document) {
 // TESTING
 
 // TEST DEPARTMENT VALIDATION
-db.employees.insert({
+dbempin.insert({
     firstName: 'Albena',
     lastName: 'Andreeva',
     otherName: 'Dianova',
@@ -254,13 +266,29 @@ db.employees.insert({
     department: 'non existent department type'
   })
 
-// TEST UNIQUE EMAIL 
-db.employees.insert({
+// TEST MANAGER VALIDATION
+dbempin.insert({
+    firstName: 'Albena',
+    lastName: 'Andreeva',
+    otherName: 'Dianova',
+    phone: '0876453446',
+    email: 'test@test.com',
+    addressCollection : {
+      city: 'Plovdiv',
+      country: 'Bulgaria',
+      address: 'Ravna reka Str, 12'
+    },
+    jobTitle: 'auditor',
+    department: 'administration',
+    manager: 'non existing manager'
+  })
+
+// TEST REQUIRED EMAIL 
+dbempin.insert({
 firstName: 'Albena',
 lastName: 'Andreeva',
 otherName: 'Dianova',
 phone: '0876453446',
-email: 'abi1997@abv.bg',
 addressCollection : {
     city: 'Plovdiv',
     country: 'Bulgaria',
@@ -269,3 +297,65 @@ addressCollection : {
 jobTitle: 'auditor',
 department: 'administration'
 })
+
+// TEST REQUIRED FIRST NAME 
+dbempin.insert({
+    lastName: 'Andreeva',
+    otherName: 'Dianova',
+    phone: '0876453446',
+    email: 'test@test.com',
+    addressCollection : {
+        city: 'Plovdiv',
+        country: 'Bulgaria',
+        address: 'Ravna reka Str, 12'
+    },
+    jobTitle: 'auditor',
+    department: 'administration'
+    })
+
+    // TEST REQUIRED LAST NAME 
+dbempin.insert({
+    firstName: 'Albena',
+    otherName: 'Dianova',
+    phone: '0876453446',
+    email: 'test@test.com',
+    addressCollection : {
+        city: 'Plovdiv',
+        country: 'Bulgaria',
+        address: 'Ravna reka Str, 12'
+    },
+    jobTitle: 'auditor',
+    department: 'administration'
+    })
+
+// TEST REQUIRED PHONE 
+dbempin.insert({
+    firstName: 'Albena',
+    lastName: 'Andreeva',
+    otherName: 'Dianova',
+    phone: '0876453446',
+    email: 'test@test.com',
+    addressCollection : {
+        city: 'Plovdiv',
+        country: 'Bulgaria',
+        address: 'Ravna reka Str, 12'
+    },
+    jobTitle: 'auditor',
+    department: 'administration'
+    })
+
+// TEST REQUIRED JOB TITLE 
+dbempin.insert({
+    firstName: 'Albena',
+    lastName: 'Andreeva',
+    otherName: 'Dianova',
+    phone: '0876453446',
+    email: 'test@test.com',
+    addressCollection : {
+        city: 'Plovdiv',
+        country: 'Bulgaria',
+        address: 'Ravna reka Str, 12'
+    },
+    department: 'administration'
+    })
+    
